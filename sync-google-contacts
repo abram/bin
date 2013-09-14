@@ -1,0 +1,2 @@
+#!/bin/sh
+/System/Library/PrivateFrameworks/GoogleContactSync.framework/Versions/A/Resources/gconsync --sync com.google.ContactSync

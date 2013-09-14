@@ -1,0 +1,64 @@
+#!/usr/bin/env python
+import re
+import sys
+import os.path
+
+inputFile = os.path.expanduser("~/projects.txt")
+outputFile = "/Users/abe/Documents/actions.txt"
+
+sampleText = """
+My Project
+  project description (any number of lines)
+  * do something @computer
+  * talk to bob @phone w/bob
+"""
+
+if not os.path.isfile(inputFile):
+	print >> sys.stderr, "Can't find %s, please create it." % inputFile
+	print >> sys.stderr, "Your projects file should look like this:"
+	print >> sys.stderr, sampleText
+	sys.exit(1)
+
+if len(sys.argv)==1:
+	contextFilter = []
+else:
+	contextFilter = sys.argv[1:]
+
+actions = {}
+
+for line in file(inputFile):
+	if re.match(r"^[A-Za-z]", line):
+		project = line.strip()
+	elif re.match(r"\s*\*.*", line):
+		contexts = []
+		words = []
+		for chunk in line.strip().split():
+			if chunk == "*":
+				continue
+			elif re.match(r"(@|w/)[a-z]+", chunk) and chunk != "w/out":
+				contexts.append(chunk)
+			else:
+				words.append(chunk)
+		description = " ".join(words)
+		for context in contexts:
+			actions.setdefault(context, []).append([description, project, contexts])
+
+contexts = actions.keys()
+contexts.sort()
+
+#output = open(outputFile, 'w+b');
+output = sys.stdout
+
+output.write("Next Actions %s\n\n" % (len(contextFilter)==1 and contextFilter[0] or ""))
+for context in contexts:
+	seenProjects = []
+	if contextFilter and (context not in contextFilter): continue
+	if len(contextFilter) != 1: output.write("%s:\n" % context)
+	for action, project, allContexts in actions[context]:
+		otherContexts = " ".join([c for c in allContexts if c!=context])
+		if project not in seenProjects:
+			output.write("    %s %s - %s\n" % (action, otherContexts, project))
+			if project != "Other": seenProjects.append(project)
+	output.write("\n")
+
+#output.close()
